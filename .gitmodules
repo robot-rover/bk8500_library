@@ -1,0 +1,3 @@
+[submodule "example"]
+	path = example
+	url = https://github.com/BKPrecisionCorp/BK-8500-Electronic-Load
