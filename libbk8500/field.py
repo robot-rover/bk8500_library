@@ -14,10 +14,10 @@ class BitField(Field):
         self.length = length
 
     def serialize(self, value):
-        return int2ba(value, self.length, 'little')
+        return ba2int(value)
 
     def deserialize(self, data):
-        return ba2int(data)
+        return int2ba(data, self.length, 'little')
 
 
 class IntField:
@@ -55,4 +55,4 @@ class EnumField(Field):
         return int(value)
 
     def deserialize(self, data):
-        return self.enum.__init__(data)
+        return self.enum(data)

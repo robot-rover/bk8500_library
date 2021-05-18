@@ -8,12 +8,26 @@ PACKET_STRUCT = '<BBB'
 def calc_checksum(packet_bytes):
     return sum(byte for byte in packet_bytes) & 0xFF
 
+class StatusException(Exception):
+    def __init__(self, code, message=""):
+        self.code = code
+        super().__init__('Status:', code, message)
+
 
 class Packet:
     COMMAND_ID = None
     RESPONSE_ID = None
     PACKET_FORMAT = None
     FIELDS = []
+
+    @classmethod
+    def request(cls, address=None):
+        assert cls.RESPONSE_ID is not None, 'Packet cannot be Requested'
+        struct_format = PACKET_STRUCT + '22x'
+        address = address if address is not None else 0
+        data = struct.pack(struct_format, 0xAA, address, cls.RESPONSE_ID)
+        checksum = calc_checksum(data).to_bytes(1, 'big')
+        return data + checksum
 
     def serialize(self, *command_args):
         assert self.COMMAND_ID is not None, 'Packet cannot be serialized'
@@ -32,18 +46,26 @@ class Packet:
         assert len(packet_bytes) == 26, "Packet Data is not 26 bytes long"
         struct_format = PACKET_STRUCT + cls.PACKET_FORMAT
         assert struct.calcsize(struct_format) == 25, "Packet Format String is not 26 bytes long"
-        expect_checksum = calc_checksum(packet_bytes[0:24])
+        expect_checksum = calc_checksum(packet_bytes[0:25])
         actual_checksum = packet_bytes[25]
         assert expect_checksum == actual_checksum, "Checksum is incorrect"
-        packet_data = struct.unpack(struct_format, packet_bytes[0:24])
+        packet_data = struct.unpack(struct_format, packet_bytes[0:25])
         assert packet_data[0] == 0xAA, "Packet Magic is incorrect"
         address = packet_data[1]
         command_id = packet_data[2]
+        if command_id == Status.RESPONSE_ID and command_id != cls.RESPONSE_ID:
+            packet = Status.deserialize(packet_bytes)
+            assert packet.status != Status.Code.SUCCESS, "Unexpected Success Status"
+            raise StatusException(packet.status)
         assert cls.RESPONSE_ID == command_id, "Command ID is unexpected"
         data = packet_data[3:]
         assert len(data) == len(cls.FIELDS), "Incorrect number of fields"
-        proccessed_args = (field.deserialize(data) for field, data in zip(cls.FIELDS, data))
-        return cls.__init__(*proccessed_args, address)
+        proccessed_args = [field.deserialize(data) for field, data in zip(cls.FIELDS, data)]
+        packet = cls(*proccessed_args, address)
+        if command_id == Status.RESPONSE_ID:
+            if packet.status != Status.Code.SUCCESS:
+                raise StatusException(packet.status)
+        return packet
 
 
 class Status(Packet):
@@ -59,8 +81,9 @@ class Status(Packet):
 
     FIELDS = [EnumField(Code)]
 
-    def __init__(self, status):
+    def __init__(self, status, address=None):
         self.status = Status.Code(status)
+        self.address = address
 
     def __str__(self):
         return f'Status({self.status})'
@@ -154,6 +177,16 @@ class LimitModeEnum(enum.IntEnum):
     CV = 1
     CW = 2
     CR = 3
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def from_string(s):
+        try:
+            return LimitModeEnum[s]
+        except AttributeError:
+            raise ValueError()
 
 
 class Mode(Packet):
@@ -770,12 +803,16 @@ class Measure(Packet):
         return super().serialize(self.volts, self.amps, self.watts, self.operation_bits, self.demand_bits)
 
     def __str__(self):
-        return f'Measure({self.volts} V, {self.amps} A, {self.watts} W, operation={self.operation_bits}, demand={self.demand_bits})'
+        def format_bitset(enum, bits):
+            return f"{{{'|'.join(member.name for member, enabled in zip(enum, bits) if enabled)}}}"
+
+        return f'''Measure({self.volts} V, {self.amps} A, {self.watts} W, operation={format_bitset(Measure.OperationBits,
+            self.operation_bits)}, demand={format_bitset(Measure.DemandBits, self.demand_bits)})'''
 
 
 class Version(Packet):
     RESPONSE_ID = 0x6A
-    COMMAND_FORMAT = '5sBB10s5x'
+    PACKET_FORMAT = '5sBB10s5x'
     FIELDS = [Field(), Field(), Field(), Field()]
 
     def __init__(self, model, firmware_major, firmware_minor, serial_number, address=None):
@@ -794,7 +831,7 @@ class Version(Packet):
 
 class Barcode(Packet):
     RESPONSE_ID = 0x6B
-    COMMAND_FORMAT = '3s2s2s2s13x'
+    PACKET_FORMAT = '3s2s2s2s13x'
     FIELDS = [Field(), Field(), Field(), Field()]
 
     def __init__(self, identity, sub, version, year, address=None):
@@ -808,4 +845,4 @@ class Barcode(Packet):
         return super().serialize(self.identity, self.sub, self.version, self.year)
 
     def __str__(self):
-        return f'Barcode({self.identity}{self.sub}{self.version}{self.year})'
+        return f'Barcode({b"".join((self.identity, self.sub, self.version, self.year))})'

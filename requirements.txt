@@ -1,2 +1,4 @@
 pyserial~=3.5
 bitarray~=2.1.0
+numpy~=1.20.2
+matplotlib~=3.4.1
