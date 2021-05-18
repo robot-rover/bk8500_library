@@ -46,21 +46,24 @@ class Packet:
         return cls.__init__(*proccessed_args, address)
 
 
-class StatusResponse(Packet):
+class Status(Packet):
     RESPONSE_ID = 0x12
     PACKET_FORMAT = 'B21x'
 
-    class Status(enum.IntEnum):
+    class Code(enum.IntEnum):
         INCORRECT_CHECKSUM = 0x90
         INCORRECT_PARAMETER = 0xA0
         UNRECOGNIZED_COMMAND = 0xB0
         INVALID_COMMAND = 0xC0
         SUCCESS = 0x80
 
-    FIELDS = [EnumField(Status)]
+    FIELDS = [EnumField(Code)]
 
     def __init__(self, status):
-        self.status = StatusResponse.Status(status)
+        self.status = Status.Code(status)
+
+    def __str__(self):
+        return f'Status({self.status})'
 
 
 class RemoteOperation(Packet):
@@ -75,8 +78,11 @@ class RemoteOperation(Packet):
     def __bytes__(self):
         return super().serialize(self.enable_remote)
 
+    def __str__(self):
+        return f'RemoteOperation(enable_remote={self.enable_remote})'
 
-class Enable(Packet):
+
+class EnableLoad(Packet):
     COMMAND_ID = 0x21
     PACKET_FORMAT = 'B21x'
     FIELDS = [BoolField()]
@@ -87,6 +93,9 @@ class Enable(Packet):
 
     def __bytes__(self):
         return super().serialize(self.enable_load)
+
+    def __str__(self):
+        return f'EnableLoad({self.enable_load})'
 
 
 class MaximumVoltage(Packet):
@@ -102,6 +111,9 @@ class MaximumVoltage(Packet):
     def __bytes__(self):
         return super().serialize(self.volts)
 
+    def __str__(self):
+        return f'MaximumVoltage({self.volts} V)'
+
 
 class MaximumCurrent(Packet):
     COMMAND_ID = 0x24
@@ -116,6 +128,9 @@ class MaximumCurrent(Packet):
     def __bytes__(self):
         return super().serialize(self.amps)
 
+    def __str__(self):
+        return f'MaximumCurrent({self.amps} A)'
+
 
 class MaximumPower(Packet):
     COMMAND_ID = 0x26
@@ -129,6 +144,9 @@ class MaximumPower(Packet):
 
     def __bytes__(self):
         return super().serialize(self.watts)
+
+    def __str__(self):
+        return f'MaximumPower({self.watts} W)'
 
 
 class LimitModeEnum(enum.IntEnum):
@@ -151,6 +169,9 @@ class Mode(Packet):
     def __bytes__(self):
         return super().serialize(self.mode)
 
+    def __str__(self):
+        return f'Mode({self.mode})'
+
 
 class CurrentLevel(Packet):
     COMMAND_ID = 0x2A
@@ -164,6 +185,9 @@ class CurrentLevel(Packet):
 
     def __bytes__(self):
         return super().serialize(self.amps)
+
+    def __str__(self):
+        return f'CurrentLevel({self.amps} A)'
 
 
 class VoltageLevel(Packet):
@@ -179,6 +203,9 @@ class VoltageLevel(Packet):
     def __bytes__(self):
         return super().serialize(self.volts)
 
+    def __str__(self):
+        return f'VoltageLevel({self.volts} V)'
+
 
 class PowerLevel(Packet):
     COMMAND_ID = 0x2E
@@ -193,6 +220,9 @@ class PowerLevel(Packet):
     def __bytes__(self):
         return super().serialize(self.watts)
 
+    def __str__(self):
+        return f'PowerLevel({self.watts} W)'
+
 
 class ResistanceLevel(Packet):
     COMMAND_ID = 0x30
@@ -206,6 +236,9 @@ class ResistanceLevel(Packet):
 
     def __bytes__(self):
         return super().serialize(self.ohms)
+
+    def __str__(self):
+        return f'ResistanceLevel({self.ohms} Ω)'
 
 
 class TransientOperationEnum(enum.IntEnum):
@@ -233,6 +266,9 @@ class CurrentTransient(Packet):
         return super().serialize(self.value_a, self.time_a, self.value_b,
                                  self.time_b, self.operation)
 
+    def __str__(self):
+        return f'CurrentTransient({self.value_a} A @ {self.time_a} s -> {self.value_b} A @ {self.time_b} s, operation={self.operation})'
+
 
 class VoltageTransient(Packet):
     COMMAND_ID = 0x34
@@ -252,6 +288,9 @@ class VoltageTransient(Packet):
     def __bytes__(self):
         return super().serialize(self.value_a, self.time_a, self.value_b,
                                  self.time_b, self.operation)
+
+    def __str__(self):
+        return f'VoltageTransient({self.value_a} V @ {self.time_a} s -> {self.value_b} V @ {self.time_b} s, operation={self.operation})'
 
 
 class PowerTransient(Packet):
@@ -273,6 +312,9 @@ class PowerTransient(Packet):
         return super().serialize(self.value_a, self.time_a, self.value_b,
                                  self.time_b, self.operation)
 
+    def __str__(self):
+        return f'PowerTransient({self.value_a} W @ {self.time_a} s -> {self.value_b} W @ {self.time_b} s, operation={self.operation})'
+
 
 class ResistanceTransient(Packet):
     COMMAND_ID = 0x38
@@ -293,6 +335,9 @@ class ResistanceTransient(Packet):
         return super().serialize(self.value_a, self.time_a, self.value_b,
                                  self.time_b, self.operation)
 
+    def __str__(self):
+        return f'ResistanceTransient({self.value_a} Ω @ {self.time_a} s -> {self.value_b} Ω @ {self.time_b} s, operation={self.operation})'
+
 
 class ListOperation(Packet):
     COMMAND_ID = 0x3A
@@ -306,6 +351,9 @@ class ListOperation(Packet):
 
     def __bytes__(self):
         return super().serialize(self.mode)
+
+    def __str__(self):
+        return f'ListOperation({self.mode})'
 
 
 class ListRepeat(Packet):
@@ -321,6 +369,9 @@ class ListRepeat(Packet):
     def __bytes__(self):
         return super().serialize(self.enable_repeat)
 
+    def __str__(self):
+        return f'ListRepeat({self.enable_repeat})'
+
 
 class ListSteps(Packet):
     COMMAND_ID = 0x3E
@@ -335,8 +386,11 @@ class ListSteps(Packet):
     def __bytes__(self):
         return super().serialize(self.num_steps)
 
+    def __str__(self):
+        return f'ListSteps({self.num_steps})'
 
-class SetStepCurrent(Packet):
+
+class StepCurrent(Packet):
     COMMAND_ID = 0x40
     RESPONSE_ID = 0x41
     PACKET_FORMAT = 'HIH14x'
@@ -351,8 +405,11 @@ class SetStepCurrent(Packet):
     def __bytes__(self):
         return super().serialize(self.step_num, self.amps, self.seconds)
 
+    def __str__(self):
+        return f'StepCurrent(Step #{self.step_num}: {self.amps} A @ {self.seconds} s)'
 
-class SetStepVoltage(Packet):
+
+class StepVoltage(Packet):
     COMMAND_ID = 0x42
     RESPONSE_ID = 0x43
     PACKET_FORMAT = 'HIH14x'
@@ -367,8 +424,11 @@ class SetStepVoltage(Packet):
     def __bytes__(self):
         return super().serialize(self.step_num, self.volts, self.seconds)
 
+    def __str__(self):
+        return f'StepVoltage(Step #{self.step_num}: {self.volts} V @ {self.seconds} s)'
 
-class SetStepPower(Packet):
+
+class StepPower(Packet):
     COMMAND_ID = 0x44
     RESPONSE_ID = 0x45
     PACKET_FORMAT = 'HIH14x'
@@ -383,8 +443,11 @@ class SetStepPower(Packet):
     def __bytes__(self):
         return super().serialize(self.step_num, self.watts, self.seconds)
 
+    def __str__(self):
+        return f'StepPower(Step #{self.step_num}: {self.watts} W @ {self.seconds} s)'
 
-class SetStepResistance(Packet):
+
+class StepResistance(Packet):
     COMMAND_ID = 0x46
     RESPONSE_ID = 0x47
     PACKET_FORMAT = 'HIH14x'
@@ -399,8 +462,11 @@ class SetStepResistance(Packet):
     def __bytes__(self):
         return super().serialize(self.step_num, self.ohms, self.seconds)
 
+    def __str__(self):
+        return f'StepResistance(Step #{self.step_num}: {self.ohms} Ω @ {self.seconds} s)'
 
-class SetListFilename(Packet):
+
+class ListFilename(Packet):
     COMMAND_ID = 0x48
     RESPONSE_ID = 0x49
     PACKET_FORMAT = '10s12x'
@@ -413,8 +479,11 @@ class SetListFilename(Packet):
     def __bytes__(self):
         return super().serialize(self.file_name)
 
+    def __str__(self):
+        return f'ListFilename({self.file_name})'
 
-class SetPartitionScheme(Packet):
+
+class PartitionScheme(Packet):
     COMMAND_ID = 0x4A
     RESPONSE_ID = 0x4B
     PACKET_FORMAT = 'B21x'
@@ -434,6 +503,9 @@ class SetPartitionScheme(Packet):
     def __bytes__(self):
         return super().serialize(self.scheme)
 
+    def __str__(self):
+        return f'PartitionScheme({self.scheme})'
+
 
 class SaveListFile(Packet):
     COMMAND_ID = 0x4C
@@ -447,6 +519,9 @@ class SaveListFile(Packet):
     def __bytes__(self):
         return super().serialize(self.location)
 
+    def __str__(self):
+        return f'SaveListFile(location={self.location})'
+
 
 class LoadListFile(Packet):
     COMMAND_ID = 0x4D
@@ -459,6 +534,9 @@ class LoadListFile(Packet):
 
     def __bytes__(self):
         return super().serialize(self.location)
+
+    def __str__(self):
+        return f'LoadListFile(location={self.location})'
 
 
 class MinimumBatteryVoltage(Packet):
@@ -474,6 +552,9 @@ class MinimumBatteryVoltage(Packet):
     def __bytes__(self):
         return super().serialize(self.volts)
 
+    def __str__(self):
+        return f'MinimumBatteryVoltage({self.volts} V)'
+
 
 class LoadOnTimer(Packet):
     COMMAND_ID = 0x50
@@ -488,6 +569,9 @@ class LoadOnTimer(Packet):
     def __bytes__(self):
         return super().serialize(self.seconds)
 
+    def __str__(self):
+        return f'LoadOnTimer({self.seconds} s)'
+
 
 class EnableLoadOnTimer(Packet):
     COMMAND_ID = 0x52
@@ -500,6 +584,9 @@ class EnableLoadOnTimer(Packet):
 
     def __bytes__(self):
         return super().serialize(self.enable_timer)
+
+    def __str__(self):
+        return f'EnableLoadOnTimer({self.enable_timer})'
 
 
 class SetAddress(Packet):
@@ -514,6 +601,9 @@ class SetAddress(Packet):
     def __bytes__(self):
         return super().serialize(self.new_address)
 
+    def __str__(self):
+        return f'SetAddress(0x{self.new_address:2X})'
+
 
 class EnableLocalOverride(Packet):
     COMMAND_ID = 0x55
@@ -527,6 +617,9 @@ class EnableLocalOverride(Packet):
     def __bytes__(self):
         return super().serialize(self.enable_override)
 
+    def __str__(self):
+        return f'EnableLocalOverride({self.enable_override})'
+
 
 class EnableRemoteSensing(Packet):
     COMMAND_ID = 0x56
@@ -539,6 +632,9 @@ class EnableRemoteSensing(Packet):
 
     def __bytes__(self):
         return super().serialize(self.enable_sensing)
+
+    def __str__(self):
+        return f'EnableRemoteSensing({self.enable_sensing})'
 
 
 class SelectTriggerSource(Packet):
@@ -560,6 +656,9 @@ class SelectTriggerSource(Packet):
     def __bytes__(self):
         return super().serialize(self.trigger_source)
 
+    def __str__(self):
+        return f'SelectTriggerSource({self.trigger_source})'
+
 
 class Trigger(Packet):
     COMMAND_ID = 0x5A
@@ -571,6 +670,9 @@ class Trigger(Packet):
 
     def __bytes__(self):
         return super().serialize()
+
+    def __str__(self):
+        return f'Trigger()'
 
 
 class SaveSettings(Packet):
@@ -585,6 +687,9 @@ class SaveSettings(Packet):
     def __bytes__(self):
         return super().serialize(self.register_num)
 
+    def __str__(self):
+        return f'SaveSettings(register_num={self.register_num})'
+
 
 class LoadSettings(Packet):
     COMMAND_ID = 0x5C
@@ -597,6 +702,9 @@ class LoadSettings(Packet):
 
     def __bytes__(self):
         return super().serialize(self.register_num)
+
+    def __str__(self):
+        return f'LoadSettings(register_num={self.register_num})'
 
 
 class SelectFunction(Packet):
@@ -619,6 +727,9 @@ class SelectFunction(Packet):
 
     def __bytes__(self):
         return super().serialize(self.function)
+
+    def __str__(self):
+        return f'SelectFunction({self.function})'
 
 
 class Measure(Packet):
@@ -658,6 +769,9 @@ class Measure(Packet):
     def __bytes__(self):
         return super().serialize(self.volts, self.amps, self.watts, self.operation_bits, self.demand_bits)
 
+    def __str__(self):
+        return f'Measure({self.volts} V, {self.amps} A, {self.watts} W, operation={self.operation_bits}, demand={self.demand_bits})'
+
 
 class Version(Packet):
     RESPONSE_ID = 0x6A
@@ -674,6 +788,9 @@ class Version(Packet):
     def __bytes__(self):
         return super().serialize(self.model, self.firmware_major, self.firmware_minor, self.serial_number)
 
+    def __str__(self):
+        return f'Version(model={self.model}, firmware={self.firmware_major}.{self.firmware_minor}, serial_num={self.serial_number})'
+
 
 class Barcode(Packet):
     RESPONSE_ID = 0x6B
@@ -689,3 +806,6 @@ class Barcode(Packet):
 
     def __bytes__(self):
         return super().serialize(self.identity, self.sub, self.version, self.year)
+
+    def __str__(self):
+        return f'Barcode({self.identity}{self.sub}{self.version}{self.year})'
